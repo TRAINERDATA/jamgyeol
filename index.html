@@ -1,0 +1,1174 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="잠결">
+<meta name="theme-color" content="#000000">
+<title>잠결</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+/* Style: true-black flat (taste-skill app sheet, seed 1466900024).
+   Elevation by lightness alone: #000 ground, #111 card, #2a2a2a nested. No borders or shadows on cards at rest.
+   One data hue, moonlit blue, only on deep sleep and the wake window. Wakefulness is brightness: awake #e6e6e6, light sleep #6b6b6b.
+   Primary control by inversion: white pill, black label. Single dark theme on purpose: the app is used in a dark bedroom on an OLED phone.
+   Layout: one 520px phone column, bottom bar of four destinations, a docked primary action on the Tonight screen. */
+:root{
+  --ground:#000; --surface:#111; --raised:#2a2a2a; --track:#1c1c1c; --rule:#1c1c1c; --control:#444;
+  --text:#fff; --muted:#b4b4b4; --faint:#949494;
+  --deep:#6fb3f2; --light:#6b6b6b; --awake:#e6e6e6;
+  --positive:#3fc07a; --negative:#e5566f; --warning:#e5a93b;
+  --pill-neg-bg:#2c1a20;
+  --r-card:20px; --r-inner:12px; --gap:14px; --pad:20px;
+  --font:"Pretendard Variable", Pretendard, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+  --ease-out:cubic-bezier(0.23,1,0.32,1);
+  --ease-drawer:cubic-bezier(0.32,0.72,0,1);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--ground);color:var(--text);font-family:var(--font);font-size:14px;line-height:20px;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+::selection{background:var(--deep);color:#000}
+input{caret-color:var(--deep)}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+[hidden]{display:none!important}
+.num{font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid var(--text);outline-offset:2px;border-radius:8px}
+
+.app{max-width:520px;margin:0 auto;padding-top:calc(20px + env(safe-area-inset-top,0px));padding-bottom:calc(84px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.app.docked{padding-bottom:calc(160px + env(safe-area-inset-bottom,0px))}
+.view{display:flex;flex-direction:column;gap:var(--gap)}
+.titlerow{display:flex;flex-direction:column;gap:4px;padding:4px 4px 10px}
+h1{font-size:24px;line-height:30px;font-weight:600;margin:0;letter-spacing:-0.01em;text-wrap:balance}
+h2{font-size:16px;line-height:22px;font-weight:600;margin:0}
+.sub{color:var(--muted);margin:0}
+.meta{color:var(--faint);font-size:12px;line-height:16px;margin:0}
+
+.card{background:var(--surface);border-radius:var(--r-card);padding:var(--pad)}
+.card-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.section{display:flex;flex-direction:column;gap:12px;padding:10px 4px 0}
+
+/* alarm */
+.alarm{display:flex;flex-direction:column;gap:16px}
+.alarm label{color:var(--muted)}
+#alarmTime{display:block;background:transparent;border:0;padding:0;margin-top:2px;font-size:40px;line-height:48px;font-weight:500;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;color:var(--text);min-height:48px;width:100%;text-align:left;-webkit-appearance:none;appearance:none}
+#alarmTime::-webkit-date-and-time-value{text-align:left}
+#alarmTime::-webkit-calendar-picker-indicator{filter:invert(.7)}
+.ahead svg{display:block;width:100%;overflow:visible}
+.ahead-note{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:8px}
+.ahead-note .meta{white-space:nowrap}
+
+.seg{display:flex;background:var(--surface);border-radius:999px;padding:3px;gap:2px}
+.seg button{flex:1 1 0;min-width:0;min-height:38px;border:0;background:transparent;color:var(--muted);border-radius:999px;font-size:14px;transition:background-color 160ms ease,color 160ms ease,transform 160ms var(--ease-out);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px}
+.seg button[aria-pressed="true"]{background:var(--raised);color:var(--text);font-weight:500}
+.card .seg,.group .seg{background:var(--ground)}
+
+/* last night */
+.rowlink{display:flex;flex-direction:column;gap:12px;width:100%;text-align:left;border:0;background:var(--surface);border-radius:var(--r-card);padding:16px var(--pad);transition:transform 160ms var(--ease-out),background-color 160ms ease}
+.rowlink .top{display:flex;align-items:center;gap:12px}
+.rowlink .who{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.rowlink .score{font-size:24px;line-height:28px;font-weight:500;font-variant-numeric:tabular-nums}
+.rowlink .score small{font-size:12px;color:var(--faint);font-weight:400;margin-left:1px}
+.chev{width:16px;height:16px;color:var(--faint);flex:none}
+.strip{display:block;width:100%;height:6px;border-radius:3px;overflow:hidden}
+
+/* chips */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--control);background:transparent;color:var(--muted);font-size:14px;transition:background-color 160ms ease,color 160ms ease,border-color 160ms ease,transform 160ms var(--ease-out)}
+.chip svg{width:14px;height:14px;display:none}
+.chip[aria-pressed="true"]{background:var(--raised);border-color:var(--raised);color:var(--text)}
+.chip[aria-pressed="true"] svg{display:block}
+.chip.static{min-height:28px;padding:0 12px;font-size:13px;background:var(--raised);border-color:var(--raised);color:var(--text)}
+
+/* grouped list rows */
+.group{background:var(--surface);border-radius:var(--r-card);overflow:hidden}
+.grow{display:flex;flex-direction:column;gap:12px;padding:16px var(--pad)}
+.grow + .grow{border-top:1px solid var(--rule)}
+.grow .line{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.grow .txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.grow .ttl{font-size:16px;line-height:22px;font-weight:500}
+
+.switch{position:relative;width:51px;height:31px;flex:none}
+.switch input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
+.switch span{position:absolute;inset:0;border-radius:999px;background:var(--raised);transition:background-color 200ms ease}
+.switch span::after{content:"";position:absolute;top:3px;left:3px;width:25px;height:25px;border-radius:50%;background:var(--faint);transition:transform 240ms var(--ease-out),background-color 200ms ease}
+.switch input:checked+span{background:var(--text)}
+.switch input:checked+span::after{transform:translateX(20px);background:#000}
+.switch input:focus-visible+span{outline:2px solid var(--text);outline-offset:2px}
+
+/* buttons */
+.primary{display:flex;align-items:center;justify-content:center;width:100%;min-height:54px;border:0;border-radius:999px;background:var(--text);color:#000;font-size:17px;font-weight:600;transition:transform 160ms var(--ease-out),opacity 160ms ease}
+.ghost{display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;flex:none;min-height:40px;padding:0 16px;border-radius:999px;border:1px solid var(--control);background:transparent;color:var(--text);font-size:14px;transition:transform 160ms var(--ease-out),border-color 160ms ease}
+.textbtn{border:0;background:none;padding:10px 0;color:var(--muted);font-size:14px;display:inline-flex;align-items:center;gap:4px}
+.textbtn.danger{color:var(--negative)}
+.primary:active,.ghost:active,.chip:active,.seg button:active,.rowlink:active,.tabs button:active,.textbtn:active{transform:scale(0.97)}
+@media (hover:hover) and (pointer:fine){
+  .rowlink:hover{background:#161616}
+  .ghost:hover{border-color:var(--faint)}
+  .chip:hover{border-color:var(--faint)}
+}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+.err{color:var(--negative);margin:0}
+.notice{background:var(--surface);border-radius:var(--r-card);padding:16px var(--pad);display:flex;flex-direction:column;gap:12px}
+.notice .ttl{font-weight:500}
+
+.cta-dock{position:fixed;left:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom,0px));z-index:6;background:var(--ground);padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px))}
+.cta-dock > div{max-width:488px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+
+/* journal */
+.nightlist{list-style:none;margin:0;padding:0;background:var(--surface);border-radius:var(--r-card);overflow:hidden}
+.nightlist li + li{border-top:1px solid var(--rule)}
+.nightlist .rowlink{border-radius:0;background:transparent}
+.pill{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:999px;background:var(--raised);color:var(--muted);font-size:11px;line-height:20px;font-weight:500;vertical-align:1px;margin-left:6px}
+
+/* detail */
+.back{align-self:flex-start;border:0;background:none;color:var(--muted);display:inline-flex;align-items:center;gap:2px;min-height:44px;padding:0 4px 0 0;font-size:15px}
+.back svg{width:20px;height:20px}
+.lead{display:flex;flex-direction:column;gap:6px}
+.lead .big{display:flex;align-items:baseline;gap:6px}
+.lead .big b{font-size:36px;line-height:40px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
+.lead .big span{color:var(--faint)}
+.lead .finding{font-size:16px;line-height:24px;margin:6px 0 0}
+.legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:12px;line-height:16px}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:0}
+.chartbox svg{display:block;width:100%;overflow:visible}
+.svg-label{fill:var(--faint);font-size:12px;font-family:var(--font)}
+.svg-note{fill:var(--text);font-size:12px;font-weight:500;font-family:var(--font)}
+.divided{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--rule);border-radius:var(--r-card);overflow:hidden}
+.divided > div{background:var(--surface);padding:14px 18px 16px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.divided dt{color:var(--muted);font-size:13px;line-height:18px}
+.divided dd{margin:0;font-size:20px;line-height:26px;font-weight:500;font-variant-numeric:tabular-nums}
+.divided dd small{font-size:13px;color:var(--faint);font-weight:400;margin-left:2px}
+.clips{list-style:none;margin:0;padding:0}
+.clips li{display:flex;flex-direction:column;gap:8px;padding:14px var(--pad)}
+.clips li + li{border-top:1px solid var(--rule)}
+.clips .line{display:flex;justify-content:space-between;color:var(--muted)}
+.clips audio{width:100%;height:36px}
+.empty-line{padding:16px var(--pad);color:var(--muted);margin:0}
+
+/* trends */
+.tagtable{width:100%;border-collapse:collapse}
+.tagtable th{font-size:12px;line-height:16px;color:var(--faint);font-weight:400;text-align:left;padding:0 0 10px}
+.tagtable td{padding:12px 0;border-top:1px solid var(--rule)}
+.tagtable .n{text-align:right;font-variant-numeric:tabular-nums}
+.good{color:var(--positive)} .bad{color:var(--negative)}
+
+/* tabs */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:7;background:var(--ground);border-top:1px solid var(--rule);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.tabs nav{max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+.tabs button{display:flex;flex-direction:column;align-items:center;gap:3px;height:64px;justify-content:center;border:0;background:none;color:#7a7a7a;font-size:11px;line-height:14px;transition:color 160ms ease,transform 160ms var(--ease-out)}
+.tabs svg{width:22px;height:22px}
+.tabs button[aria-current="page"]{color:var(--text)}
+
+/* night */
+.night{position:fixed;inset:0;z-index:20;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:space-between;text-align:center;color:#5c5c5c;padding:calc(56px + env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) calc(36px + env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px));transition:opacity 400ms ease}
+.night .clock{font-size:min(24vw,104px);line-height:1;font-weight:300;letter-spacing:-0.04em;font-variant-numeric:tabular-nums;color:#4a4a4a;margin-top:12vh}
+.night .win{margin-top:18px;font-size:15px;color:#555}
+.meter{width:120px;height:2px;background:#111;border-radius:1px;overflow:hidden;margin:22px auto 0}
+.meter i{display:block;height:100%;width:0;background:#333;transition:transform 150ms linear;transform-origin:left}
+.status{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;font-size:12px;color:#555}
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;background:#2a2a2a;vertical-align:1px}
+.dot.on{background:#5c5c5c}
+.night .wake{min-height:52px;padding:0 32px;border-radius:999px;border:1px solid #222;background:transparent;color:#6b6b6b;font-size:15px;transition:transform 160ms var(--ease-out),color 160ms ease,border-color 160ms ease}
+.night .wake.armed{border-color:#9a9a9a;color:#d0d0d0}
+.night .wake:active{transform:scale(0.97)}
+
+/* ringing: inverted so the screen itself is light in the dark room */
+.ring{position:fixed;inset:0;z-index:30;background:#f2f2f2;color:#000;display:flex;flex-direction:column;justify-content:space-between;padding:calc(64px + env(safe-area-inset-top,0px)) max(24px,env(safe-area-inset-right,0px)) calc(32px + env(safe-area-inset-bottom,0px)) max(24px,env(safe-area-inset-left,0px))}
+.ring .t{font-size:min(22vw,96px);line-height:1;font-weight:600;letter-spacing:-0.04em;font-variant-numeric:tabular-nums}
+.ring h2{font-size:24px;line-height:30px;margin-top:20px}
+.ring p{color:#4a4a4a;margin:6px 0 0;font-size:16px;line-height:24px}
+.ring .primary{background:#000;color:#fff}
+.ring .ghost{border-color:#b0b0b0;color:#000;width:100%;min-height:54px;font-size:16px}
+.ring .acts{display:flex;flex-direction:column;gap:10px;max-width:420px;width:100%;margin:0 auto}
+.ring:not([hidden]){animation:ringIn 320ms var(--ease-out)}
+@keyframes ringIn{from{opacity:0}to{opacity:1}}
+
+@media (prefers-reduced-motion: reduce){
+  *{transition-duration:0ms!important;animation:none!important}
+}
+</style>
+</head>
+<body>
+<main class="app docked" id="app">
+
+<!-- TONIGHT -->
+<section class="view" id="v-tonight">
+  <div class="titlerow">
+    <h1>오늘 밤</h1>
+    <p class="sub" id="tonightSub"></p>
+  </div>
+
+  <div class="notice" id="recover" hidden>
+    <span class="ttl">끊긴 측정이 있어요</span>
+    <p class="sub" id="recoverText"></p>
+    <div class="btnrow">
+      <button class="ghost" id="recoverSave">기록으로 저장</button>
+      <button class="textbtn danger" id="recoverDrop">버리기</button>
+    </div>
+  </div>
+
+  <section class="card alarm" aria-label="알람">
+    <div>
+      <label for="alarmTime">기상 시간</label>
+      <input type="time" id="alarmTime" value="07:00">
+    </div>
+    <div class="ahead">
+      <svg id="aheadSvg" height="34" aria-hidden="true"></svg>
+      <div class="ahead-note"><span class="sub" id="aheadLeft"></span><span class="meta num" id="aheadRight"></span></div>
+    </div>
+    <div class="seg" id="winSeg" role="group" aria-label="기상 구간">
+      <button data-v="0">정각</button>
+      <button data-v="15">15분</button>
+      <button data-v="30">30분</button>
+      <button data-v="45">45분</button>
+    </div>
+  </section>
+
+  <div id="lastWrap"></div>
+
+  <div class="section">
+    <h2>오늘 하루</h2>
+    <div class="chips" id="tagChips"></div>
+  </div>
+
+  <div class="section">
+    <h2>잠들 때</h2>
+  </div>
+  <div class="group">
+    <div class="grow">
+      <div class="txt"><span class="ttl">수면 사운드</span><span class="meta" id="soundMeta"></span></div>
+      <div class="seg" id="soundSeg" role="group" aria-label="수면 사운드">
+        <button data-v="none">끄기</button>
+        <button data-v="brown">노이즈</button>
+        <button data-v="rain">빗소리</button>
+        <button data-v="waves">파도</button>
+      </div>
+      <div class="seg" id="soundMinSeg" role="group" aria-label="사운드 타이머">
+        <button data-v="15">15분 후 끔</button>
+        <button data-v="30">30분 후 끔</button>
+        <button data-v="60">60분 후 끔</button>
+      </div>
+    </div>
+    <div class="grow">
+      <div class="line">
+        <div class="txt"><span class="ttl">코골이·잠꼬대 녹음</span><span class="sub">큰 소리가 날 때만 짧게 녹음해요</span></div>
+        <label class="switch"><input type="checkbox" id="recToggle" aria-label="코골이·잠꼬대 녹음"><span></span></label>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>측정 전에</h2>
+    <p class="sub">충전기를 연결하고 베개 옆 매트리스 위에 화면을 아래로 두세요. 측정 중에는 이 화면을 닫지 마세요. 알람이 들리도록 무음 모드는 끄고 볼륨을 올려두세요.</p>
+  </div>
+</section>
+
+<!-- JOURNAL -->
+<section class="view" id="v-journal" hidden>
+  <div id="journalList" class="view">
+    <div class="titlerow">
+      <h1>기록</h1>
+      <p class="sub" id="journalSub"></p>
+    </div>
+    <div class="notice" id="sampleNote" hidden>
+      <span class="ttl">예시 기록이에요</span>
+      <p class="sub">화면 구성을 보여주려고 넣어둔 6일치 예시예요. 첫 측정을 저장하면 자동으로 사라져요.</p>
+      <div class="btnrow"><button class="ghost" id="dropSamples">예시 지우기</button></div>
+    </div>
+    <ul class="nightlist" id="nightList"></ul>
+  </div>
+  <div id="journalDetail" class="view" hidden></div>
+</section>
+
+<!-- TRENDS -->
+<section class="view" id="v-trends" hidden>
+  <div class="titlerow">
+    <h1>추세</h1>
+    <p class="sub" id="trendSub"></p>
+  </div>
+  <div id="trendBody" class="view"></div>
+</section>
+
+<!-- SETTINGS -->
+<section class="view" id="v-settings" hidden>
+  <div class="titlerow">
+    <h1>설정</h1>
+    <p class="sub">기록은 이 폰의 브라우저에만 저장돼요</p>
+  </div>
+  <div class="group">
+    <div class="grow">
+      <div class="txt"><span class="ttl">목표 수면 시간</span><span class="sub">수면 점수와 추세의 기준선이에요</span></div>
+      <div class="seg" id="goalSeg"><button data-v="6">6시간</button><button data-v="7">7시간</button><button data-v="8">8시간</button><button data-v="9">9시간</button></div>
+    </div>
+    <div class="grow">
+      <div class="txt"><span class="ttl">소리 감지 민감도</span><span class="sub">에어컨·선풍기 소리가 큰 방이면 낮게, 조용한 방이면 높게 두세요</span></div>
+      <div class="seg" id="sensSeg"><button data-v="low">낮음</button><button data-v="mid">보통</button><button data-v="high">높음</button></div>
+    </div>
+    <div class="grow">
+      <div class="line">
+        <div class="txt"><span class="ttl">알람 소리</span><span class="sub">자기 전에 한 번 듣고 볼륨을 맞춰두세요</span></div>
+        <button class="ghost" id="testAlarm">5초 듣기</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section"><h2>백업</h2></div>
+  <div class="group">
+    <div class="grow">
+      <div class="txt"><span class="sub">브라우저 데이터를 지우면 기록도 사라져요. 가끔 백업 파일을 저장해두세요. 녹음은 백업에 포함되지 않아요.</span></div>
+      <div class="btnrow">
+        <button class="ghost" id="exportBtn">백업 파일 저장</button>
+        <label class="ghost" for="importFile">백업 불러오기</label>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+      </div>
+      <p class="meta" id="backupMsg" hidden></p>
+    </div>
+  </div>
+
+  <div class="section"><h2>측정 방식</h2>
+    <p class="sub">마이크로 주변 소리의 크기를, 가속도 센서로 매트리스의 흔들림을 1분 단위로 기록해요. 뒤척임과 소리가 많은 구간은 얕은 잠, 조용하고 움직임 없는 구간은 깊은 잠으로 추정해요. 의료용 측정이 아닌 참고용 추정치예요.</p>
+  </div>
+  <div class="group">
+    <div class="grow">
+      <div class="line">
+        <div class="txt"><span class="ttl">모든 기록 삭제</span><span class="sub" id="wipeMsg">수면 기록과 녹음이 모두 지워져요</span></div>
+        <button class="textbtn danger" id="wipeBtn">삭제</button>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<div class="cta-dock" id="dock">
+  <div>
+    <p class="err" id="startErr" hidden></p>
+    <button class="primary" id="startBtn">잠자리에 들기</button>
+  </div>
+</div>
+
+<div class="tabs"><nav aria-label="메뉴">
+  <button data-tab="tonight" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.6A8.2 8.2 0 0 1 9.4 4a8.2 8.2 0 1 0 10.6 10.6z"/></svg>오늘 밤</button>
+  <button data-tab="journal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M5 6.5h14M5 12h14M5 17.5h9"/></svg>기록</button>
+  <button data-tab="trends"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 19v-7M12 19V6M18 19v-4"/></svg>추세</button>
+  <button data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 7.5h9M17 7.5h3M4 16.5h3M11 16.5h9"/><circle cx="15" cy="7.5" r="2"/><circle cx="9" cy="16.5" r="2"/></svg>설정</button>
+</nav></div>
+
+<div class="night" id="night" hidden>
+  <div>
+    <div class="clock" id="nClock">00:00</div>
+    <div class="win" id="nWin"></div>
+    <div class="meter" aria-hidden="true"><i id="nMeter"></i></div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:24px;align-items:center">
+    <div class="status">
+      <span><i class="dot" id="dMic"></i>소리</span>
+      <span><i class="dot" id="dMotion"></i>움직임</span>
+      <span><i class="dot" id="dLock"></i>화면 유지</span>
+    </div>
+    <button class="wake" id="wakeBtn">일어났어요</button>
+  </div>
+</div>
+
+<div class="ring" id="ring" hidden>
+  <div>
+    <div class="t" id="rClock">07:00</div>
+    <h2>좋은 아침이에요</h2>
+    <p id="rWhy"></p>
+  </div>
+  <div class="acts">
+    <button class="primary" id="stopBtn">알람 끄고 일어나기</button>
+    <button class="ghost" id="snoozeBtn">9분 더 자기</button>
+  </div>
+</div>
+
+<audio id="alarmEl" preload="auto" playsinline></audio>
+
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const pad = n => String(n).padStart(2, '0');
+const fmtT = ms => { const d = new Date(ms); return pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+const fmtDur = m => { m = Math.max(0, Math.round(m)); const h = Math.floor(m / 60), r = m % 60; return h ? (h + '시간' + (r ? ' ' + r + '분' : '')) : r + '분'; };
+const DAYS = ['일','월','화','수','목','금','토'];
+const fmtDate = ms => { const d = new Date(ms); return (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' + DAYS[d.getDay()] + '요일'; };
+const fmtDateShort = ms => { const d = new Date(ms); return (d.getMonth() + 1) + '월 ' + d.getDate() + '일 (' + DAYS[d.getDay()] + ')'; };
+const pct = (arr, p) => { if (!arr.length) return 0; const a = [...arr].sort((x, y) => x - y); return a[Math.min(a.length - 1, Math.floor(p * (a.length - 1)))]; };
+const avg = a => a.length ? a.reduce((s, v) => s + v, 0) / a.length : 0;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const TAGS = ['카페인', '음주', '운동', '스트레스', '늦은 식사', '낮잠', '야근', '약 복용'];
+const STAGE = ['awake', 'light', 'deep'];
+const CHECK = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5l3 3 6-7"/></svg>';
+const CHEV = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+
+/* ---------- storage ---------- */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+};
+const clipDB = (() => {
+  let p;
+  const open = () => p || (p = new Promise((res, rej) => {
+    const r = indexedDB.open('jamgyeol', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('clips');
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  }));
+  const tx = async (mode, fn) => { const db = await open(); return new Promise((res, rej) => {
+    const t = db.transaction('clips', mode); const req = fn(t.objectStore('clips'));
+    t.oncomplete = () => res(req ? req.result : undefined); t.onerror = () => rej(t.error);
+  }); };
+  return {
+    put: (id, b) => tx('readwrite', s => s.put(b, id)).catch(() => {}),
+    get: id => tx('readonly', s => s.get(id)).catch(() => null),
+    del: id => tx('readwrite', s => s.delete(id)).catch(() => {}),
+    clear: () => tx('readwrite', s => s.clear()).catch(() => {})
+  };
+})();
+
+let nights = store.get('jg.nights', null);
+let settings = Object.assign({ goal: 8, sens: 'mid', alarm: '07:00', win: 30, rec: true, sound: 'none', soundMin: 30, tags: [], samplesDropped: false }, store.get('jg.settings', {}));
+const saveSettings = () => store.set('jg.settings', settings);
+const saveNights = () => store.set('jg.nights', nights);
+
+/* ---------- analysis ---------- */
+function analyze(n) {
+  const mins = n.mins || [], L = mins.length;
+  if (!L) return { stages: [], score: 0, asleep: 0, deep: 0, light: 0, awake: 0, latency: 0, snore: 0 };
+  const mv = mins.map(m => m.m || 0);
+  const hasMotion = n.motionOK && mv.some(v => v > 0);
+  const norm = Math.max(pct(mv, 0.85), 2) * 1.2;
+  const raw = mins.map(m => {
+    const so = Math.min(1, (m.e || 0) / 8 + Math.max(0, (m.s || 0) - 2) / 12);
+    if (!hasMotion) return so;
+    return Math.min(1, (m.m || 0) / norm) * 0.75 + so * 0.25;
+  });
+  const sm = raw.map((_, i) => { let s = 0, c = 0; for (let j = i - 2; j <= i + 2; j++) if (j >= 0 && j < L) { s += raw[j]; c++; } return s / c; });
+  const onset = Math.min(8, Math.round(L * 0.08));
+  const stages = sm.map((v, i) => v > 0.5 ? 0 : (i < onset || v > 0.16) ? 1 : 2);
+  let latency = stages.findIndex((s, i) => s === 2 || (i >= onset && s !== 0));
+  if (latency < 0) latency = L;
+  const cnt = [0, 0, 0]; stages.forEach(s => cnt[s]++);
+  const asleep = L - cnt[0];
+  const goal = (settings.goal || 8) * 60;
+  const durS = Math.min(1, asleep / goal) * 55;
+  const deepS = Math.min(1, (cnt[2] / Math.max(1, asleep)) / 0.25) * 20;
+  const contS = (1 - Math.min(1, (cnt[0] / L) / 0.25)) * 15;
+  const latS = latency <= 20 ? 10 : latency <= 45 ? 5 : 0;
+  const snore = (n.events || []).reduce((s, e) => s + e.dur, 0) / 60;
+  return { stages, score: Math.round(durS + deepS + contS + latS), asleep, deep: cnt[2], light: cnt[1], awake: cnt[0], latency, snore };
+}
+
+/* ---------- sample data (marked 예시, removed on the first real night) ---------- */
+function makeSamples() {
+  const out = [], now = new Date();
+  const plan = [
+    { d: 1, bed: [23, 38], len: 446, tags: ['운동'], mood: '개운함', wake: 'smart' },
+    { d: 2, bed: [0, 52], len: 352, tags: ['카페인', '야근'], mood: '피곤함', wake: 'target' },
+    { d: 3, bed: [23, 15], len: 470, tags: [], mood: '개운함', wake: 'smart' },
+    { d: 4, bed: [1, 20], len: 330, tags: ['음주', '늦은 식사'], mood: '피곤함', wake: 'snooze' },
+    { d: 5, bed: [23, 50], len: 421, tags: ['스트레스'], mood: '보통', wake: 'smart' },
+    { d: 6, bed: [23, 5], len: 488, tags: ['운동'], mood: '개운함', wake: 'manual' }
+  ];
+  let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  for (const p of plan) {
+    const s = new Date(now); s.setDate(s.getDate() - p.d); s.setHours(p.bed[0], p.bed[1], 0, 0);
+    if (p.bed[0] < 12) s.setDate(s.getDate() + 1);
+    const rough = p.tags.includes('음주') || p.tags.includes('카페인') ? 1.8 : 1;
+    const mins = [];
+    for (let i = 0; i < p.len; i++) {
+      const cyc = (i % 92) / 92, depth = Math.cos(cyc * Math.PI * 2), late = i / p.len;
+      let m = 0;
+      if (i < 14) m = 6 + rnd() * 12;
+      else if (depth < -0.3 + late * 0.6) m = rnd() < 0.55 * rough ? 3 + rnd() * 12 * rough : rnd() * 1.5;
+      else if (rnd() < 0.05 * rough) m = 4 + rnd() * 10;
+      if (rnd() < 0.012 * rough) m = 25 + rnd() * 20;
+      const e = rnd() < 0.06 * rough ? +(rnd() * 6).toFixed(1) : 0;
+      mins.push({ m: +m.toFixed(2), k: m > 8 ? 2 : 0, s: +(rnd() * 2 + (e ? 4 : 0)).toFixed(1), e });
+    }
+    const events = [];
+    mins.forEach((m, i) => { if (m.e > 2) events.push({ t: s.getTime() + i * 60000, dur: m.e, peak: 14, clip: null }); });
+    const end = s.getTime() + p.len * 60000;
+    const alarmTarget = p.wake === 'smart' ? end + (6 + Math.round(rnd() * 18)) * 60000 : p.wake === 'manual' ? null : end - (p.wake === 'snooze' ? 9 * 60000 : 0);
+    const n = { id: 'sample' + p.d, sample: true, start: s.getTime(), end, alarmTarget, win: 30, tags: p.tags, mood: p.mood, mins, events, motionOK: true, wakeReason: p.wake };
+    n.r = analyze(n); out.push(n);
+  }
+  return out;
+}
+if (nights === null) { nights = settings.samplesDropped ? [] : makeSamples(); saveNights(); }
+
+/* ---------- alarm sound: generated WAV, 20 s crescendo then steady ---------- */
+function makeChimeURL() {
+  const sr = 22050, secs = 40, n = sr * secs, data = new Float32Array(n);
+  const notes = [523.25, 659.25, 783.99, 1046.5, 783.99, 659.25, 587.33, 698.46];
+  const step = 0.45;
+  for (let k = 0; k * step < secs; k++) {
+    const f = notes[k % notes.length], t0 = Math.floor(k * step * sr), len = Math.floor(1.8 * sr);
+    const g = 0.12 + 0.88 * Math.min(1, (k * step) / 20);
+    for (let i = 0; i < len && t0 + i < n; i++) {
+      const t = i / sr, env = Math.exp(-t * 2.6) * Math.min(1, t * 300);
+      data[t0 + i] += g * env * (Math.sin(6.2832 * f * t) * 0.55 + Math.sin(6.2832 * f * 2 * t) * 0.18 + Math.sin(6.2832 * f * 3 * t) * 0.06);
+    }
+  }
+  let mx = 0; for (let i = 0; i < n; i++) mx = Math.max(mx, Math.abs(data[i]));
+  const buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+  const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  w(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true);
+  v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, n * 2, true);
+  for (let i = 0; i < n; i++) v.setInt16(44 + i * 2, Math.max(-1, Math.min(1, data[i] / mx * 0.9)) * 32767, true);
+  return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+}
+const alarmEl = $('#alarmEl');
+alarmEl.src = makeChimeURL();
+alarmEl.addEventListener('ended', () => { if (S && S.ringing) { alarmEl.currentTime = 20; alarmEl.play().catch(() => {}); } });
+
+/* ---------- measuring session ---------- */
+let S = null;
+const SENS = { low: 16, mid: 12, high: 8 };
+
+function nextAlarm(hhmm) {
+  const [h, m] = hhmm.split(':').map(Number);
+  const d = new Date(); d.setHours(h, m, 0, 0);
+  if (d.getTime() <= Date.now() + 60000) d.setDate(d.getDate() + 1);
+  return d.getTime();
+}
+
+async function startNight() {
+  const err = $('#startErr'); err.hidden = true;
+  const pMotion = (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === 'function')
+    ? DeviceMotionEvent.requestPermission().catch(() => 'denied') : Promise.resolve('granted');
+  alarmEl.muted = true;
+  const unlock = alarmEl.play().then(() => { alarmEl.pause(); alarmEl.currentTime = 0; }).catch(() => {});
+  let ctx;
+  try { ctx = new (window.AudioContext || window.webkitAudioContext)(); ctx.resume(); } catch (e) {}
+
+  S = {
+    id: 'n' + Date.now(), start: Date.now(), end: null, alarmTarget: nextAlarm(settings.alarm), win: settings.win, tags: [...settings.tags],
+    mins: [], events: [], motionOK: false, micOK: false, mood: null, wakeReason: null,
+    ctx, ringing: false, snoozeUntil: null, soundEnd: 0, clips: 0,
+    acc: { t: Date.now(), m: 0, k: 0, sSum: 0, sN: 0, e: 0 }, floor: null, ring: [], ev: null, prevA: null, recent: []
+  };
+
+  const perm = await pMotion; await unlock; alarmEl.muted = false;
+  if (perm === 'granted') window.addEventListener('devicemotion', onMotion);
+
+  try {
+    S.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    const src = ctx.createMediaStreamSource(S.stream);
+    S.an = ctx.createAnalyser(); S.an.fftSize = 2048; src.connect(S.an);
+    S.buf = new Float32Array(S.an.fftSize); S.micOK = true;
+  } catch (e) { S.micOK = false; }
+  if (!S.micOK && perm !== 'granted') {
+    window.removeEventListener('devicemotion', onMotion);
+    S = null;
+    err.textContent = '마이크와 움직임 센서를 쓸 수 없어 측정을 시작하지 못했어요. 브라우저 설정에서 이 사이트의 마이크를 허용해 주세요. https 주소에서만 동작해요.';
+    err.hidden = false; return;
+  }
+  await requestLock();
+  if (settings.sound !== 'none' && ctx) startSleepSound(settings.sound, settings.soundMin);
+
+  S.tickA = setInterval(audioTick, 100);
+  S.tickB = setInterval(secondTick, 1000);
+  settings.tags = []; saveSettings();
+  showNight(true);
+  persistActive();
+}
+
+function onMotion(e) {
+  if (!S) return;
+  const a = e.accelerationIncludingGravity; if (!a || a.x == null) return;
+  S.motionOK = true;
+  if (S.prevA) {
+    const d = Math.hypot(a.x - S.prevA.x, a.y - S.prevA.y, a.z - S.prevA.z);
+    if (d > 0.06) { S.acc.m += d; S.recent.push([Date.now(), d]); }
+    if (d > 0.25) S.acc.k++;
+  }
+  S.prevA = { x: a.x, y: a.y, z: a.z };
+}
+
+function audioTick() {
+  if (!S || !S.an || S.ringing) return;
+  S.an.getFloatTimeDomainData(S.buf);
+  let sum = 0; for (let i = 0; i < S.buf.length; i++) sum += S.buf[i] * S.buf[i];
+  const db = 20 * Math.log10(Math.sqrt(sum / S.buf.length) + 1e-9);
+  S.ring.push(db); if (S.ring.length > 300) S.ring.shift();
+  if (S.ring.length % 50 === 0 || S.floor == null) {
+    if (S.ring.length >= 30) { const p = pct(S.ring, 0.2); S.floor = S.floor == null ? p : S.floor * 0.8 + p * 0.2; }
+    else return;
+  }
+  const rel = db - S.floor;
+  S.acc.sSum += Math.max(0, rel); S.acc.sN++;
+  $('#nMeter').style.transform = 'scaleX(' + Math.max(0, Math.min(1, rel / 25)).toFixed(3) + ')';
+  $('#nMeter').style.width = '100%';
+  const now = Date.now(), thr = SENS[settings.sens] || 12;
+  if (now < S.soundEnd + 2000) { if (S.ev) finishEvent(false); return; }
+  if (!S.ev) {
+    if (rel > thr) { S.ev = { t: now, last: now, peak: rel, rec: null }; maybeClip(); }
+  } else {
+    if (rel > thr - 3) { S.ev.last = now; S.ev.peak = Math.max(S.ev.peak, rel); }
+    else if (now - S.ev.last > 1500) finishEvent(true);
+    if (S.ev && now - S.ev.t > 60000) finishEvent(true);
+  }
+}
+
+function maybeClip() {
+  if (!settings.rec || !window.MediaRecorder || !S.stream || S.clips >= 40) return;
+  const mime = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'].find(t => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || '';
+  try {
+    const rec = new MediaRecorder(S.stream, mime ? { mimeType: mime } : undefined);
+    const chunks = [], id = 'c' + Date.now();
+    rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+    rec.onstop = () => { if (rec.keep && chunks.length) clipDB.put(id, new Blob(chunks, { type: rec.mimeType || mime || 'audio/mp4' })); };
+    rec.start(); rec.id = id; rec.keep = false;
+    rec.hard = setTimeout(() => { try { rec.state !== 'inactive' && rec.stop(); } catch (e) {} }, 20000);
+    S.ev.rec = rec; S.clips++;
+  } catch (e) {}
+}
+
+function finishEvent(keep) {
+  const ev = S.ev; S.ev = null; if (!ev) return;
+  const dur = (ev.last - ev.t) / 1000;
+  const real = keep && dur >= 0.4;
+  if (real) { S.events.push({ t: ev.t, dur: +dur.toFixed(1), peak: Math.round(ev.peak), clip: ev.rec ? ev.rec.id : null }); S.acc.e += dur; }
+  if (ev.rec) {
+    const rec = ev.rec; rec.keep = real && dur >= 1;
+    if (!rec.keep) { S.clips--; if (real) { const last = S.events[S.events.length - 1]; if (last) last.clip = null; } }
+    setTimeout(() => { clearTimeout(rec.hard); try { rec.state !== 'inactive' && rec.stop(); } catch (e) {} }, 1500);
+  }
+}
+
+function closeMinute(force) {
+  const a = S.acc, el = Date.now() - a.t;
+  if (el < 60000 && !(force && el > 20000)) return;
+  S.mins.push({ m: +a.m.toFixed(2), k: a.k, s: a.sN ? +(a.sSum / a.sN).toFixed(1) : 0, e: +a.e.toFixed(1) });
+  S.acc = { t: Date.now(), m: 0, k: 0, sSum: 0, sN: 0, e: 0 };
+  persistActive();
+}
+
+function persistActive() {
+  if (!S) return;
+  const { id, start, alarmTarget, win, tags, mins, events, motionOK } = S;
+  store.set('jg.active', { id, start, alarmTarget, win, tags, mins, events, motionOK, saved: Date.now() });
+}
+
+function isStirring() {
+  const now = Date.now();
+  S.recent = S.recent.filter(r => now - r[0] < 180000);
+  if (S.motionOK) {
+    const recent = S.recent.reduce((s, r) => s + r[1], 0);
+    const base = pct(S.mins.map(m => m.m), 0.75);
+    if (recent > Math.max(base * 2, 3)) return true;
+  }
+  const last3 = S.mins.slice(-2).reduce((s, m) => s + m.e, 0) + S.acc.e;
+  return !S.motionOK && last3 > 4;
+}
+
+function secondTick() {
+  if (!S) return;
+  const now = Date.now();
+  $('#nClock').textContent = fmtT(now);
+  closeMinute(false);
+  S.recent = S.recent.filter(r => now - r[0] < 180000);
+  if (S.ringing) { if (alarmEl.paused) alarmEl.play().catch(() => {}); return; }
+  if (S.snoozeUntil) { if (now >= S.snoozeUntil) ring('snooze'); return; }
+  if (now >= S.alarmTarget) return ring('target');
+  const ws = S.alarmTarget - S.win * 60000;
+  if (S.win > 0 && now >= ws + 60000 && isStirring()) ring('smart');
+}
+
+function stopMic() {
+  if (S.ev) finishEvent(true);
+  if (S.stream) S.stream.getTracks().forEach(t => t.stop());
+  S.stream = null; S.an = null;
+}
+
+function ring(reason) {
+  S.ringing = true;
+  if (!S.wakeReason) S.wakeReason = reason;
+  stopMic(); stopSleepSound();
+  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+  alarmEl.currentTime = 0; alarmEl.play().catch(() => {});
+  if (navigator.vibrate) navigator.vibrate([400, 300, 400, 300, 400]);
+  $('#rClock').textContent = fmtT(Date.now());
+  $('#rWhy').textContent = reason === 'smart' ? '얕은 잠일 때 깨웠어요. 설정한 ' + fmtT(S.alarmTarget) + '보다 ' + fmtDur((S.alarmTarget - Date.now()) / 60000) + ' 일찍이에요.'
+    : reason === 'snooze' ? '9분이 지났어요.' : '설정한 기상 시간이에요.';
+  $('#ring').hidden = false;
+}
+
+$('#snoozeBtn').addEventListener('click', () => {
+  alarmEl.pause(); S.ringing = false; S.snoozeUntil = Date.now() + 9 * 60000; $('#ring').hidden = true;
+  $('#nWin').textContent = fmtT(S.snoozeUntil) + '에 다시 울려요';
+});
+$('#stopBtn').addEventListener('click', () => { alarmEl.pause(); endNight(); });
+
+let armT;
+$('#wakeBtn').addEventListener('click', () => {
+  const b = $('#wakeBtn');
+  if (!b.classList.contains('armed')) {
+    b.classList.add('armed'); b.textContent = '한 번 더 누르면 측정을 끝내요';
+    clearTimeout(armT); armT = setTimeout(() => { b.classList.remove('armed'); b.textContent = '일어났어요'; }, 3500);
+  } else { clearTimeout(armT); if (!S.wakeReason) S.wakeReason = 'manual'; endNight(); }
+});
+
+function endNight() {
+  closeMinute(true);
+  clearInterval(S.tickA); clearInterval(S.tickB);
+  window.removeEventListener('devicemotion', onMotion);
+  stopMic(); stopSleepSound();
+  try { S.ctx && S.ctx.close(); } catch (e) {}
+  releaseLock();
+  const n = { id: S.id, start: S.start, end: Date.now(), alarmTarget: S.alarmTarget, win: S.win, tags: S.tags, mood: null, mins: S.mins, events: S.events, motionOK: S.motionOK, wakeReason: S.wakeReason || 'manual' };
+  S = null;
+  $('#ring').hidden = true; showNight(false);
+  saveNight(n);
+  openDetail(n.id);
+}
+
+function saveNight(n) {
+  n.r = analyze(n);
+  if (nights.some(x => x.sample)) { nights = nights.filter(x => !x.sample); settings.samplesDropped = true; saveSettings(); }
+  nights = nights.filter(x => x.id !== n.id); nights.push(n);
+  nights.sort((a, b) => b.start - a.start);
+  saveNights(); store.del('jg.active');
+}
+
+/* ---------- screen wake lock ---------- */
+async function requestLock() {
+  try { if (navigator.wakeLock) { S.lock = await navigator.wakeLock.request('screen'); S.lock.addEventListener && S.lock.addEventListener('release', () => { $('#dLock').classList.remove('on'); }); } } catch (e) {}
+  $('#dLock').classList.toggle('on', !!(S && S.lock && !S.lock.released));
+}
+function releaseLock() { try { S && S.lock && S.lock.release(); } catch (e) {} }
+document.addEventListener('visibilitychange', () => { if (S && document.visibilityState === 'visible') { requestLock(); try { S.ctx && S.ctx.resume(); } catch (e) {} } });
+
+/* ---------- sleep sounds ---------- */
+function startSleepSound(kind, minutes) {
+  const ctx = S.ctx, sr = ctx.sampleRate, len = sr * 8;
+  const buf = ctx.createBuffer(1, len, sr), d = buf.getChannelData(0);
+  let last = 0;
+  for (let i = 0; i < len; i++) {
+    const w = Math.random() * 2 - 1;
+    if (kind === 'rain') d[i] = w * 0.35;
+    else { last = (last + 0.02 * w) / 1.02; d[i] = last * 3.5; }
+  }
+  const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+  const master = ctx.createGain(); master.gain.value = 0;
+  let node = src;
+  if (kind === 'rain') {
+    const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 500;
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 5500;
+    node.connect(hp); hp.connect(lp); node = lp;
+  } else {
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = kind === 'waves' ? 1400 : 900;
+    node.connect(lp); node = lp;
+  }
+  if (kind === 'waves') {
+    const g = ctx.createGain(); g.gain.value = 0.55;
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 0.09;
+    const depth = ctx.createGain(); depth.gain.value = 0.45; lfo.connect(depth); depth.connect(g.gain); lfo.start();
+    node.connect(g); node = g; S.lfo = lfo;
+  }
+  node.connect(master); master.connect(ctx.destination);
+  const t = ctx.currentTime;
+  master.gain.linearRampToValueAtTime(0.35, t + 4);
+  master.gain.setValueAtTime(0.35, t + minutes * 60 - 60);
+  master.gain.linearRampToValueAtTime(0, t + minutes * 60);
+  src.start(); src.stop(t + minutes * 60 + 1);
+  S.noise = src; S.soundEnd = Date.now() + minutes * 60000;
+}
+function stopSleepSound() {
+  if (!S) return;
+  try { S.noise && S.noise.stop(); } catch (e) {}
+  try { S.lfo && S.lfo.stop(); } catch (e) {}
+  S.noise = null; S.soundEnd = 0;
+}
+
+function showNight(on) {
+  $('#night').hidden = !on;
+  if (on) {
+    $('#nClock').textContent = fmtT(Date.now());
+    const ws = S.alarmTarget - S.win * 60000;
+    $('#nWin').textContent = S.win ? fmtT(ws) + '–' + fmtT(S.alarmTarget) + ' 사이에 깨워요' : fmtT(S.alarmTarget) + '에 깨워요';
+    $('#dMic').classList.toggle('on', S.micOK);
+    setTimeout(() => S && $('#dMotion').classList.toggle('on', S.motionOK), 2500);
+    $('#wakeBtn').classList.remove('armed'); $('#wakeBtn').textContent = '일어났어요';
+  }
+}
+
+/* ---------- SVG drawing ---------- */
+const SVGNS = 'http://www.w3.org/2000/svg';
+const widthOf = el => Math.max(240, Math.round(el.getBoundingClientRect().width || el.parentNode.getBoundingClientRect().width || 320));
+
+function stripSVG(n) {
+  const st = n.r.stages, L = st.length; let out = '';
+  for (let i = 0; i < L;) { let j = i; while (j < L && st[j] === st[i]) j++; out += `<rect x="${i}" y="0" width="${j - i + 0.3}" height="1" fill="var(--${STAGE[st[i]]})"/>`; i = j; }
+  return `<svg class="strip" viewBox="0 0 ${Math.max(1, L)} 1" preserveAspectRatio="none" aria-hidden="true"><rect width="${L}" height="1" fill="var(--track)"/>${out}</svg>`;
+}
+
+// the night ahead: now → alarm, wake window in the data hue
+function drawAhead() {
+  const svg = $('#aheadSvg'), W = widthOf(svg), H = 34;
+  const now = Date.now(), t = nextAlarm(settings.alarm), ws = t - settings.win * 60000;
+  const span = t - now, x = v => Math.max(0, Math.min(W, (v - now) / span * W));
+  let marks = '';
+  const first = new Date(now); first.setMinutes(0, 0, 0); first.setHours(first.getHours() + 1);
+  const hours = span / 3600000, every = hours > 12 ? 3 : hours > 6 ? 2 : 1;
+  for (let h = first.getTime(); h < t - 20 * 60000; h += 3600000) {
+    const hr = new Date(h).getHours(); if (hr % every) continue;
+    const xx = x(h); if (xx < 24 || xx > W - 40) continue;
+    marks += `<rect x="${xx.toFixed(1)}" y="20" width="1" height="8" fill="#333"/><text x="${xx.toFixed(1)}" y="12" text-anchor="middle" class="svg-label">${hr}시</text>`;
+  }
+  const wx = x(ws), winW = Math.max(3, W - wx);
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = `<rect x="0" y="20" width="${W}" height="8" rx="4" fill="var(--track)"/>` +
+    (settings.win ? `<rect x="${wx.toFixed(1)}" y="20" width="${winW.toFixed(1)}" height="8" rx="4" fill="var(--deep)"/>` : `<rect x="${W - 3}" y="18" width="3" height="12" rx="1.5" fill="var(--deep)"/>`) + marks;
+  $('#aheadLeft').textContent = '지금부터 최대 ' + fmtDur(span / 60000) + ' 잘 수 있어요';
+  $('#aheadRight').textContent = settings.win ? fmtT(ws) + '–' + fmtT(t) : fmtT(t);
+}
+
+function drawHypno(box, n) {
+  const st = n.r.stages, L = st.length, W = widthOf(box);
+  const P = { l: 52, r: 2, t: 26, lane: 26 }, iw = W - P.l - P.r, lanesH = P.lane * 3;
+  const soundY = P.t + lanesH + 12, soundH = 16, axisY = soundY + soundH + 18, H = axisY + 4;
+  const t0 = n.start, t1 = n.start + L * 60000, x = t => P.l + (t - t0) / (t1 - t0) * iw;
+  let s = '';
+  // wake window span
+  if (n.alarmTarget && n.win && n.wakeReason !== 'manual') {
+    const a = Math.max(t0, n.alarmTarget - n.win * 60000), b = Math.min(t1, n.alarmTarget);
+    if (b > a) s += `<rect x="${x(a).toFixed(1)}" y="${P.t}" width="${(x(b) - x(a)).toFixed(1)}" height="${lanesH}" fill="var(--deep)" opacity="0.14"/>`;
+  }
+  // hour lines + labels
+  const first = new Date(t0); first.setMinutes(0, 0, 0); first.setHours(first.getHours() + 1);
+  const every = (t1 - t0) / 3600000 > 8 ? 2 : 1;
+  for (let t = first.getTime(); t < t1; t += 3600000) {
+    const hr = new Date(t).getHours(); if (hr % every) continue;
+    const xx = x(t); if (xx > W - 14) continue;
+    s += `<rect x="${xx.toFixed(1)}" y="${P.t}" width="1" height="${lanesH + 12 + soundH}" fill="#1c1c1c"/><text x="${xx.toFixed(1)}" y="${axisY}" text-anchor="middle" class="svg-label">${hr}시</text>`;
+  }
+  // lanes
+  ['깸', '얕은 잠', '깊은 잠'].forEach((lb, r) => { s += `<text x="0" y="${P.t + r * P.lane + P.lane / 2 + 4}" class="svg-label">${lb}</text>`; });
+  for (let i = 0; i < L;) {
+    let j = i; while (j < L && st[j] === st[i]) j++;
+    const y = P.t + st[i] * P.lane + 5;
+    s += `<rect x="${(P.l + i / L * iw).toFixed(2)}" y="${y}" width="${Math.max(1, (j - i) / L * iw).toFixed(2)}" height="${P.lane - 10}" rx="2" fill="var(--${STAGE[st[i]]})"/>`;
+    i = j;
+  }
+  // sound
+  s += `<text x="0" y="${soundY + soundH / 2 + 4}" class="svg-label">소리</text>`;
+  const sv = n.mins.map(m => (m.s || 0) + (m.e || 0)), maxS = Math.max(6, ...sv);
+  sv.forEach((v, i) => { const h = Math.min(1, v / maxS) * soundH; if (h > 0.6) s += `<rect x="${(P.l + i / L * iw).toFixed(2)}" y="${(soundY + soundH - h).toFixed(1)}" width="${Math.max(1, iw / L).toFixed(2)}" height="${h.toFixed(1)}" fill="#555"/>`; });
+  // wake annotation
+  const wx = x(n.end), label = fmtT(n.end) + ' ' + ({ smart: '스마트 알람', target: '알람', snooze: '다시 알림', manual: '기상' }[n.wakeReason] || '기상');
+  s += `<rect x="${(wx - 1).toFixed(1)}" y="14" width="1" height="${P.t + lanesH - 14}" fill="#e6e6e6"/><text x="${(wx - 6).toFixed(1)}" y="12" text-anchor="end" class="svg-note">${label}</text>`;
+  s += `<text x="${P.l}" y="12" class="svg-label">${fmtT(t0)} 잠자리</text>`;
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="밤사이 수면 단계">${s}</svg>`;
+}
+
+function drawSleepBars(box, list) {
+  const W = widthOf(box), H = 190, P = { l: 30, r: 0, t: 18, b: 24 }, iw = W - P.l - P.r, ih = H - P.t - P.b;
+  const goal = settings.goal, max = Math.max(10, Math.ceil(Math.max(goal + 1, ...list.map(n => n.r.asleep / 60)) / 2) * 2);
+  const y = v => P.t + ih - v / max * ih, n = Math.max(list.length, 7), bw = iw / n;
+  let s = '';
+  for (let v = 0; v <= max; v += max > 10 ? 4 : 2) s += `<rect x="${P.l}" y="${y(v).toFixed(1)}" width="${iw}" height="1" fill="${v === 0 ? '#333' : '#1a1a1a'}"/><text x="0" y="${(y(v) + 4).toFixed(1)}" class="svg-label">${v}h</text>`;
+  list.forEach((nt, i) => {
+    const cx = P.l + i * bw + bw / 2, w = Math.min(28, bw * 0.56), deep = nt.r.deep / 60, rest = (nt.r.asleep - nt.r.deep) / 60;
+    s += `<rect x="${(cx - w / 2).toFixed(1)}" y="${y(deep).toFixed(1)}" width="${w.toFixed(1)}" height="${(y(0) - y(deep)).toFixed(1)}" fill="var(--deep)"/>`;
+    s += `<rect x="${(cx - w / 2).toFixed(1)}" y="${y(deep + rest).toFixed(1)}" width="${w.toFixed(1)}" height="${Math.max(0, y(deep) - y(deep + rest) - 2).toFixed(1)}" fill="var(--light)"/>`;
+    s += `<text x="${cx.toFixed(1)}" y="${H - 6}" text-anchor="middle" class="svg-label">${new Date(nt.end).getDate()}</text>`;
+  });
+  s += `<line x1="${P.l}" x2="${W}" y1="${y(goal)}" y2="${y(goal)}" stroke="#949494" stroke-width="1" stroke-dasharray="3 3"/><text x="${W}" y="${y(goal) - 6}" text-anchor="end" class="svg-label">목표 ${goal}시간</text>`;
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="밤마다 잔 시간">${s}</svg>`;
+}
+
+function drawScoreLine(box, list) {
+  const W = widthOf(box), H = 150, P = { l: 30, r: 34, t: 12, b: 24 }, iw = W - P.l - P.r, ih = H - P.t - P.b;
+  const y = v => P.t + ih - v / 100 * ih, n = list.length, x = i => P.l + (n === 1 ? iw / 2 : i / (n - 1) * iw);
+  let s = '';
+  [0, 50, 100].forEach(v => { s += `<rect x="${P.l}" y="${y(v).toFixed(1)}" width="${iw + P.r}" height="1" fill="${v === 0 ? '#333' : '#1a1a1a'}"/><text x="0" y="${(y(v) + 4).toFixed(1)}" class="svg-label">${v}</text>`; });
+  const pts = list.map((nt, i) => `${x(i).toFixed(1)},${y(nt.r.score).toFixed(1)}`).join(' ');
+  s += `<polyline points="${pts}" fill="none" stroke="#e6e6e6" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  list.forEach((nt, i) => { if (n <= 10 || i % 2 === 0) s += `<text x="${x(i).toFixed(1)}" y="${H - 6}" text-anchor="middle" class="svg-label">${new Date(nt.end).getDate()}</text>`; });
+  const last = list[n - 1];
+  s += `<circle cx="${x(n - 1).toFixed(1)}" cy="${y(last.r.score).toFixed(1)}" r="3.5" fill="#fff"/><text x="${(x(n - 1) + 8).toFixed(1)}" y="${(y(last.r.score) + 4).toFixed(1)}" class="svg-note">${last.r.score}</text>`;
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="수면 점수 흐름">${s}</svg>`;
+}
+
+/* ---------- views ---------- */
+function setPressed(seg, v) { $$(seg + ' button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(v)))); }
+function bindSeg(seg, key, num, after) {
+  $$(seg + ' button').forEach(b => b.addEventListener('click', () => { settings[key] = num ? Number(b.dataset.v) : b.dataset.v; saveSettings(); setPressed(seg, settings[key]); after && after(); }));
+  setPressed(seg, settings[key]);
+}
+const realNights = () => nights.filter(n => n.r && n.r.stages.length);
+
+function nightRow(n, label) {
+  return `<span class="top"><span class="who"><span style="font-size:16px;line-height:22px;font-weight:500">${label}${n.sample ? '<span class="pill">예시</span>' : ''}</span>` +
+    `<span class="sub num">${fmtT(n.start)}–${fmtT(n.end)} · ${fmtDur(n.r.asleep)} 수면</span></span>` +
+    `<span class="score">${n.r.score}<small>점</small></span>${CHEV}</span>${stripSVG(n)}`;
+}
+
+function renderTonight() {
+  const last = realNights()[0];
+  $('#tonightSub').textContent = fmtDate(Date.now());
+  $('#alarmTime').value = settings.alarm;
+  drawAhead();
+  const lw = $('#lastWrap'); lw.innerHTML = '';
+  if (last) {
+    const b = document.createElement('button'); b.className = 'rowlink';
+    const isYesterday = Date.now() - last.end < 30 * 3600000;
+    b.innerHTML = nightRow(last, isYesterday ? '지난밤' : fmtDateShort(last.end));
+    b.setAttribute('aria-label', '지난밤 기록 보기');
+    b.addEventListener('click', () => openDetail(last.id));
+    lw.appendChild(b);
+  }
+  const box = $('#tagChips'); box.innerHTML = '';
+  TAGS.forEach(tag => {
+    const b = document.createElement('button'); b.className = 'chip'; b.innerHTML = CHECK + esc(tag);
+    b.setAttribute('aria-pressed', String(settings.tags.includes(tag)));
+    b.addEventListener('click', () => {
+      settings.tags = settings.tags.includes(tag) ? settings.tags.filter(x => x !== tag) : [...settings.tags, tag];
+      saveSettings(); b.setAttribute('aria-pressed', String(settings.tags.includes(tag)));
+    });
+    box.appendChild(b);
+  });
+  $('#recToggle').checked = !!settings.rec;
+  updateSoundMeta();
+  const act = store.get('jg.active', null);
+  if (act && act.mins && !S) {
+    $('#recover').hidden = false;
+    $('#recoverText').textContent = fmtT(act.start) + '에 시작한 측정이 중간에 멈췄어요. ' + fmtDur(act.mins.length) + ' 분량이 남아 있어요.';
+  } else $('#recover').hidden = true;
+}
+function updateSoundMeta() {
+  const off = settings.sound === 'none';
+  $('#soundMinSeg').hidden = off;
+  $('#soundMeta').textContent = off ? '소리 없이 잠들어요' : settings.soundMin + '분 동안 틀고 마지막 1분에 서서히 꺼져요';
+}
+
+$('#recoverSave').addEventListener('click', () => {
+  const a = store.get('jg.active', null); if (!a) return;
+  const n = Object.assign({ mood: null, wakeReason: 'manual' }, a, { end: a.start + a.mins.length * 60000 }); delete n.saved;
+  if (n.mins.length >= 10) saveNight(n); else store.del('jg.active');
+  renderTonight();
+});
+$('#recoverDrop').addEventListener('click', () => { store.del('jg.active'); renderTonight(); });
+
+function renderJournal() {
+  $('#journalList').hidden = false; $('#journalDetail').hidden = true;
+  const ul = $('#nightList'); ul.innerHTML = '';
+  const list = realNights();
+  $('#sampleNote').hidden = !nights.some(n => n.sample);
+  $('#journalSub').textContent = list.length ? list.length + '개의 밤 · 평균 ' + fmtDur(avg(list.map(n => n.r.asleep))) + ' 수면' : '아직 기록이 없어요';
+  if (!list.length) { ul.innerHTML = '<li><p class="empty-line">오늘 밤 ‘잠자리에 들기’를 누르면 첫 기록이 여기에 쌓여요.</p></li>'; return; }
+  list.forEach(n => {
+    const li = document.createElement('li');
+    const b = document.createElement('button'); b.className = 'rowlink';
+    b.innerHTML = nightRow(n, fmtDateShort(n.end));
+    b.addEventListener('click', () => openDetail(n.id));
+    li.appendChild(b); ul.appendChild(li);
+  });
+}
+
+const WAKE = { smart: '스마트 알람으로 기상', target: '정각 알람으로 기상', snooze: '다시 알림 후 기상', manual: '직접 측정 종료' };
+
+function finding(n) {
+  const others = realNights().filter(x => x.id !== n.id);
+  if (others.length < 2) return '기록이 며칠 더 쌓이면 평소와 달라진 점을 알려드려요.';
+  const k = others.length, base = '지난 ' + k + '번의 밤 평균';
+  const c = [
+    { d: n.r.asleep - avg(others.map(x => x.r.asleep)), sc: 30, txt: d => base + '보다 ' + fmtDur(Math.abs(d)) + ' ' + (d > 0 ? '더' : '덜') + ' 잤어요.' },
+    { d: n.r.deep - avg(others.map(x => x.r.deep)), sc: 15, txt: d => '깊은 잠이 ' + base + '보다 ' + fmtDur(Math.abs(d)) + ' ' + (d > 0 ? '길었어요.' : '짧았어요.') },
+    { d: n.r.latency - avg(others.map(x => x.r.latency)), sc: 8, txt: d => '잠드는 데 ' + base + '보다 ' + fmtDur(Math.abs(d)) + ' ' + (d > 0 ? '더 걸렸어요.' : '덜 걸렸어요.') },
+    { d: n.r.awake - avg(others.map(x => x.r.awake)), sc: 10, txt: d => '깨어 있던 시간이 ' + base + '보다 ' + fmtDur(Math.abs(d)) + ' ' + (d > 0 ? '길었어요.' : '짧았어요.') }
+  ].sort((a, b) => Math.abs(b.d) / b.sc - Math.abs(a.d) / a.sc)[0];
+  if (Math.abs(c.d) / c.sc < 0.5) return base + '과 비슷한 밤이었어요.';
+  return c.txt(c.d);
+}
+
+let detailId = null;
+function openDetail(id) {
+  detailId = id;
+  switchTab('journal', true);
+  const n = nights.find(x => x.id === id); if (!n) return renderJournal();
+  $('#journalList').hidden = true;
+  const box = $('#journalDetail'); box.hidden = false;
+  const r = n.r, deepPct = Math.round(r.deep / Math.max(1, r.asleep) * 100);
+  const snore = r.snore < 1 ? Math.round(r.snore * 60) + '초' : Math.round(r.snore) + '분';
+  box.innerHTML = `
+    <button class="back" id="backBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>기록</button>
+    <div class="titlerow" style="padding-top:0">
+      <h1>${fmtDateShort(n.end)}${n.sample ? '<span class="pill">예시</span>' : ''}</h1>
+      <p class="sub num">${fmtT(n.start)}–${fmtT(n.end)} · ${WAKE[n.wakeReason] || WAKE.manual}</p>
+    </div>
+    <section class="card lead">
+      <span class="sub">수면 점수</span>
+      <div class="big"><b>${r.score}</b><span>/ 100</span></div>
+      <p class="finding">${esc(finding(n))}</p>
+    </section>
+    <section class="card">
+      <div class="card-head"><h2>밤사이 흐름</h2>
+        <div class="legend"><span><i style="background:var(--awake)"></i>깸</span><span><i style="background:var(--light)"></i>얕은 잠</span><span><i style="background:var(--deep)"></i>깊은 잠</span>${n.alarmTarget && n.win && n.wakeReason !== 'manual' ? '<span><i style="background:var(--deep);opacity:.35"></i>기상 구간</span>' : ''}</div>
+      </div>
+      <div class="chartbox" id="hyp"></div>
+    </section>
+    <dl class="divided">
+      <div><dt>잠든 시간</dt><dd>${fmtDur(r.asleep)}</dd></div>
+      <div><dt>잠드는 데 걸린 시간</dt><dd>${Math.round(r.latency)}<small>분</small></dd></div>
+      <div><dt>깊은 잠</dt><dd>${fmtDur(r.deep)} <small>${deepPct}%</small></dd></div>
+      <div><dt>얕은 잠</dt><dd>${fmtDur(r.light)}</dd></div>
+      <div><dt>깨어 있던 시간</dt><dd>${Math.round(r.awake)}<small>분</small></dd></div>
+      <div><dt>소리 감지</dt><dd>${snore} <small>${n.events.length}회</small></dd></div>
+    </dl>
+    <div class="section">
+      <h2>일어난 기분</h2>
+      <div class="seg" id="moodSeg"><button data-v="피곤함">피곤함</button><button data-v="보통">보통</button><button data-v="개운함">개운함</button></div>
+    </div>
+    <div class="section">
+      <h2>그날 하루</h2>
+      <div class="chips">${n.tags.length ? n.tags.map(t => '<span class="chip static">' + esc(t) + '</span>').join('') : '<span class="sub">기록한 태그가 없어요</span>'}</div>
+    </div>
+    <div class="section"><h2>녹음된 소리</h2></div>
+    <ul class="clips group" id="clipList"></ul>
+    ${!n.motionOK && !n.sample ? '<p class="meta" style="padding:0 4px">이 밤에는 움직임 센서를 쓰지 못해 소리만으로 추정했어요.</p>' : ''}
+    <div style="padding:0 4px"><button class="textbtn danger" id="delNight">이 기록 삭제</button></div>
+  `;
+  $('#backBtn').addEventListener('click', renderJournal);
+  drawHypno($('#hyp'), n);
+  setPressed('#moodSeg', n.mood);
+  $$('#moodSeg button').forEach(b => b.addEventListener('click', () => { n.mood = b.dataset.v; saveNights(); setPressed('#moodSeg', n.mood); }));
+  const del = $('#delNight');
+  del.addEventListener('click', async () => {
+    if (del.dataset.armed !== '1') { del.dataset.armed = '1'; del.textContent = '한 번 더 누르면 삭제돼요'; return; }
+    for (const e of n.events) if (e.clip) await clipDB.del(e.clip);
+    nights = nights.filter(x => x.id !== n.id); saveNights(); renderJournal();
+  });
+  const cl = $('#clipList');
+  const withClip = n.events.filter(e => e.clip);
+  if (!withClip.length) { cl.innerHTML = '<li><span class="sub">' + (n.sample ? '예시 기록에는 녹음이 없어요.' : n.events.length ? '감지된 소리가 짧아 녹음은 남지 않았어요.' : '이 밤에는 감지된 소리가 없어요.') + '</span></li>'; return; }
+  withClip.forEach(async e => {
+    const li = document.createElement('li');
+    li.innerHTML = '<div class="line"><span class="num">' + fmtT(e.t) + '</span><span class="num">' + e.dur + '초</span></div>';
+    cl.appendChild(li);
+    const blob = await clipDB.get(e.clip);
+    if (blob) { const a = document.createElement('audio'); a.controls = true; a.preload = 'none'; a.src = URL.createObjectURL(blob); li.appendChild(a); }
+    else li.insertAdjacentHTML('beforeend', '<span class="meta">녹음 파일을 찾을 수 없어요</span>');
+  });
+}
+
+function renderTrends() {
+  const box = $('#trendBody');
+  const list = realNights().slice(0, 14).reverse();
+  $('#trendSub').textContent = list.length ? '최근 ' + list.length + '번의 밤' + (list.some(n => n.sample) ? ' · 예시 포함' : '') : '아직 기록이 없어요';
+  if (!list.length) { box.innerHTML = '<div class="group"><p class="empty-line">기록이 쌓이면 잠든 시간, 점수, 하루 습관과의 관계를 보여드려요.</p></div>'; return; }
+  const bedMins = list.map(n => { const d = new Date(n.start); let m = d.getHours() * 60 + d.getMinutes(); if (m < 720) m += 1440; return m; });
+  const avgBedRaw = avg(bedMins), avgBed = Math.round(avgBedRaw) % 1440;
+  const sd = Math.sqrt(avg(bedMins.map(m => (m - avgBedRaw) ** 2)));
+  const metGoal = list.filter(n => n.r.asleep >= settings.goal * 60).length;
+  box.innerHTML = `
+    <dl class="divided">
+      <div><dt>평균 수면 점수</dt><dd>${Math.round(avg(list.map(n => n.r.score)))}<small>점</small></dd></div>
+      <div><dt>평균 잠든 시간</dt><dd>${fmtDur(avg(list.map(n => n.r.asleep)))}</dd></div>
+      <div><dt>평균 잠자리 시각</dt><dd class="num">${pad(Math.floor(avgBed / 60))}:${pad(avgBed % 60)}</dd></div>
+      <div><dt>잠자리 시각 편차</dt><dd>±${Math.round(sd)}<small>분</small></dd></div>
+    </dl>
+    <section class="card">
+      <div class="card-head"><h2>밤마다 잔 시간</h2>
+        <div class="legend"><span><i style="background:var(--deep)"></i>깊은 잠</span><span><i style="background:var(--light)"></i>그 외 수면</span></div>
+      </div>
+      <p class="sub" style="margin:-6px 0 14px">${metGoal ? list.length + '번 중 ' + metGoal + '번 목표 ' + settings.goal + '시간을 채웠어요' : '목표 ' + settings.goal + '시간을 채운 밤은 아직 없어요'}</p>
+      <div class="chartbox" id="tSleep"></div>
+    </section>
+    <section class="card">
+      <div class="card-head"><h2>수면 점수</h2></div>
+      <div class="chartbox" id="tScore"></div>
+    </section>
+    <section class="card">
+      <div class="card-head"><h2>하루 습관과 수면 점수</h2></div>
+      <div id="tagImpact"></div>
+    </section>
+  `;
+  drawSleepBars($('#tSleep'), list);
+  drawScoreLine($('#tScore'), list);
+  const rows = TAGS.map(t => {
+    const w = list.filter(n => n.tags.includes(t)), wo = list.filter(n => !n.tags.includes(t));
+    if (!w.length || !wo.length) return null;
+    return { t, n: w.length, d: avg(w.map(n => n.r.score)) - avg(wo.map(n => n.r.score)) };
+  }).filter(Boolean).sort((a, b) => a.d - b.d);
+  $('#tagImpact').innerHTML = rows.length
+    ? '<table class="tagtable"><thead><tr><th>태그</th><th class="n">붙인 밤</th><th class="n">없던 밤 대비</th></tr></thead><tbody>' +
+      rows.map(r => { const d = Math.round(r.d); return `<tr><td>${esc(r.t)}</td><td class="n">${r.n}번</td><td class="n ${d <= -3 ? 'bad' : d >= 3 ? 'good' : ''}">${d > 0 ? '+' : ''}${d}점</td></tr>`; }).join('') +
+      '</tbody></table><p class="meta" style="margin-top:12px">태그를 붙인 밤과 붙이지 않은 밤의 평균 점수 차이예요. 밤이 쌓일수록 믿을 만해져요.</p>'
+    : '<p class="sub">‘오늘 하루’ 태그를 붙인 밤과 붙이지 않은 밤이 모두 있어야 비교할 수 있어요.</p>';
+}
+
+/* ---------- settings ---------- */
+function backupMsg(t) { const m = $('#backupMsg'); m.textContent = t; m.hidden = false; }
+$('#exportBtn').addEventListener('click', () => {
+  const data = JSON.stringify({ app: 'jamgyeol', v: 1, exported: new Date().toISOString(), settings, nights: nights.filter(n => !n.sample) });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
+  const d = new Date(); a.download = 'jamgyeol-backup-' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  backupMsg('백업 파일을 저장했어요.');
+});
+$('#importFile').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const j = JSON.parse(await f.text());
+    if (!Array.isArray(j.nights)) throw 0;
+    const ids = new Set(nights.map(n => n.id)); let added = 0;
+    nights = nights.filter(n => !n.sample);
+    j.nights.forEach(n => { if (n && n.id && n.mins && !ids.has(n.id)) { n.r = analyze(n); nights.push(n); added++; } });
+    nights.sort((a, b) => b.start - a.start); settings.samplesDropped = true; saveSettings(); saveNights();
+    backupMsg(added + '개의 밤을 불러왔어요.');
+  } catch (x) { backupMsg('잠결 백업 파일이 아니에요. 설정에서 저장한 .json 파일을 골라주세요.'); }
+  e.target.value = '';
+});
+$('#wipeBtn').addEventListener('click', async () => {
+  const b = $('#wipeBtn');
+  if (b.dataset.armed !== '1') { b.dataset.armed = '1'; b.textContent = '한 번 더 누르기'; return; }
+  nights = []; settings.samplesDropped = true; saveSettings(); saveNights(); await clipDB.clear();
+  b.dataset.armed = ''; b.textContent = '삭제'; $('#wipeMsg').textContent = '모든 기록과 녹음을 지웠어요.';
+});
+$('#testAlarm').addEventListener('click', () => {
+  alarmEl.currentTime = 22; alarmEl.play().catch(() => {});
+  setTimeout(() => { if (!S || !S.ringing) alarmEl.pause(); }, 5000);
+});
+$('#dropSamples').addEventListener('click', () => { nights = nights.filter(n => !n.sample); settings.samplesDropped = true; saveSettings(); saveNights(); renderJournal(); });
+
+/* ---------- wiring ---------- */
+$('#alarmTime').addEventListener('change', e => { if (e.target.value) { settings.alarm = e.target.value; saveSettings(); drawAhead(); } });
+$('#recToggle').addEventListener('change', e => { settings.rec = e.target.checked; saveSettings(); });
+bindSeg('#winSeg', 'win', true, drawAhead);
+bindSeg('#soundSeg', 'sound', false, updateSoundMeta);
+bindSeg('#soundMinSeg', 'soundMin', true, updateSoundMeta);
+bindSeg('#goalSeg', 'goal', true, () => { nights.forEach(n => n.r = analyze(n)); saveNights(); });
+bindSeg('#sensSeg', 'sens', false);
+$('#startBtn').addEventListener('click', startNight);
+
+let current = 'tonight';
+function switchTab(tab, keep) {
+  current = tab;
+  $$('.tabs button').forEach(b => { if (b.dataset.tab === tab) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+  ['tonight', 'journal', 'trends', 'settings'].forEach(t => $('#v-' + t).hidden = t !== tab);
+  $('#dock').hidden = tab !== 'tonight';
+  $('#app').classList.toggle('docked', tab === 'tonight');
+  window.scrollTo(0, 0);
+  if (keep) return;
+  if (tab === 'tonight') renderTonight();
+  if (tab === 'journal') renderJournal();
+  if (tab === 'trends') renderTrends();
+}
+$$('.tabs button').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+setInterval(() => { if (!S && current === 'tonight') drawAhead(); }, 60000);
+let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (current === 'trends') renderTrends(); else if (current === 'tonight') drawAhead(); else if (!$('#journalDetail').hidden && detailId) { const n = nights.find(x => x.id === detailId); if (n) drawHypno($('#hyp'), n); } }, 200); });
+renderTonight();
+})();
+</script>
+</body>
+</html>

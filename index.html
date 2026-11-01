@@ -8,6 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="잠결">
 <meta name="theme-color" content="#000000">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>잠결</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
@@ -223,6 +226,12 @@ h2{font-size:16px;line-height:22px;font-weight:600;margin:0}
   <div class="titlerow">
     <h1>오늘 밤</h1>
     <p class="sub" id="tonightSub"></p>
+  </div>
+
+  <div class="notice" id="envWarn" hidden>
+    <span class="ttl" id="envWarnTtl"></span>
+    <p class="sub" id="envWarnText"></p>
+    <div class="btnrow" id="envWarnBtns"></div>
   </div>
 
   <div class="notice" id="recover" hidden>
@@ -1602,6 +1611,34 @@ window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() =
 }, 200); });
 recalcAll();
 renderTonight();
+
+/* ---------- keep records safe on Android ----------
+   Records live in this browser only. Three ways people lose them on a Galaxy phone:
+   opening the file itself (each open is a new, empty place), opening the link inside
+   KakaoTalk/Naver/Instagram (their built-in browser throws data away), and the browser
+   clearing site data to free space. Warn about the first two, ask for persistent storage for the third. */
+(function guardStorage() {
+  const ua = navigator.userAgent || '';
+  const android = /Android/i.test(ua);
+  const inApp = /KAKAOTALK|NAVER\(inapp|Instagram|FBAN|FBAV|FB_IAB|Line\/|DaumApps|everytimeApp|; wv\)/i.test(ua);
+  const isFile = !/^https?:$/.test(location.protocol);
+  const box = $('#envWarn'), btns = $('#envWarnBtns');
+  const show = (ttl, text) => { $('#envWarnTtl').textContent = ttl; $('#envWarnText').textContent = text; box.hidden = false; };
+  const addBtn = (label, fn) => { const b = document.createElement('button'); b.className = 'ghost'; b.textContent = label; b.addEventListener('click', fn); btns.appendChild(b); };
+  if (isFile) {
+    show('이렇게 열면 기록이 저장되지 않아요', '파일을 직접 열면 열 때마다 빈 앱이 돼요. 받은 인터넷 링크(https://…)로 열고, 홈 화면에 추가해서 쓰세요.');
+  } else if (inApp) {
+    const url = location.href;
+    if (/KAKAOTALK/i.test(ua)) { location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(url); }
+    show('카톡·앱 안의 브라우저에서는 기록이 사라져요', '오른쪽 위 ⋮ 메뉴에서 "다른 브라우저로 열기"를 눌러 삼성 인터넷이나 크롬에서 여세요.');
+    if (android) {
+      const bare = url.replace(/^https?:\/\//, '');
+      addBtn('삼성 인터넷으로 열기', () => { location.href = 'intent://' + bare + '#Intent;scheme=https;package=com.sec.android.app.sbrowser;end'; });
+      addBtn('크롬으로 열기', () => { location.href = 'intent://' + bare + '#Intent;scheme=https;package=com.android.chrome;end'; });
+    }
+  }
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persisted().then(p => p || navigator.storage.persist()).catch(() => {}); } catch (e) {}
+})();
 if (settings.syncToken) syncNow(false);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !S && settings.syncToken && Date.now() - (settings.syncLast || 0) > 60000) syncNow(false); });
 window.__jg = { analyze, isSnoreSeq, mergeNights: (r, t) => mergeNights(r, t), get nights() { return nights; }, get profile() { return profile; } };
